@@ -139,8 +139,8 @@ A aplicação possui:
 ### 🔧 COMO EXECUTAR
 
 ```bash
-# 1. Extrair o projeto
-unzip orcamentos_dinamicos_altforce.zip
+# 1. Clone o repositório
+git clone https://github.com/Augustob790/Dynamic-Budgets-Module.git
 cd orcamentos_dinamicos
 
 # 2. Instalar dependências
