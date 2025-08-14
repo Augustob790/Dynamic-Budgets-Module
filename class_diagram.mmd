@@ -1,0 +1,280 @@
+classDiagram
+    %% Classe base abstrata
+    class BaseModel {
+        <<abstract>>
+        +String id
+        +DateTime createdAt
+        +DateTime updatedAt
+        +Map~String, dynamic~ toMap()
+        +fromMap(Map~String, dynamic~ map)
+        +String toString()
+        +bool operator ==(Object other)
+        +int get hashCode()
+    }
+
+    %% Hierarquia de Produtos
+    class Product {
+        <<abstract>>
+        +String name
+        +String description
+        +double basePrice
+        +String category
+        +ProductType type
+        +bool isActive
+        +calculatePrice(int quantity, Map~String, dynamic~ context)* double
+        +getRequiredFields()* List~String~
+        +validate(Map~String, dynamic~ data)* List~String~
+        +clone()* Product
+    }
+
+    class IndustrialProductModel {
+        +int voltage
+        +String certification
+        +double powerConsumption
+        +calculatePrice(int quantity, Map~String, dynamic~ context) double
+        +getRequiredFields() List~String~
+        +validate(Map~String, dynamic~ data) List~String~
+        +clone() IndustrialProductModel
+    }
+
+    class ResidentialProductModel {
+        +String color
+        +int warranty
+        +String energyRating
+        +calculatePrice(int quantity, Map~String, dynamic~ context) double
+        +getRequiredFields() List~String~
+        +validate(Map~String, dynamic~ data) List~String~
+        +clone() ResidentialProductModel
+    }
+
+    class CorporateProductModel {
+        +String licenseType
+        +String supportLevel
+        +int maxUsers
+        +calculatePrice(int quantity, Map~String, dynamic~ context) double
+        +getRequiredFields() List~String~
+        +validate(Map~String, dynamic~ data) List~String~
+        +clone() CorporateProductModel
+    }
+
+    %% Enum para tipos de produto
+    class ProductType {
+        <<enumeration>>
+        industrial
+        residential
+        corporate
+        +String get displayName()
+    }
+
+    %% Hierarquia de Regras de Negócio
+    class BusinessRule {
+        <<abstract>>
+        +String name
+        +String description
+        +RuleType type
+        +int priority
+        +bool isActive
+        +Map~String, dynamic~ conditions
+        +evaluate(Map~String, dynamic~ context)* bool
+        +apply(Map~String, dynamic~ context)* RuleResult
+    }
+
+    class PricingRuleModel {
+        +ModificationType modificationType
+        +double value
+        +bool isPercentage
+        +evaluate(Map~String, dynamic~ context) bool
+        +apply(Map~String, dynamic~ context) RuleResult
+    }
+
+    class ValidationRuleModel {
+        +List~String~ targetFields
+        +ValidationType validationType
+        +Map~String, dynamic~ validationParams
+        +evaluate(Map~String, dynamic~ context) bool
+        +apply(Map~String, dynamic~ context) RuleResult
+    }
+
+    class VisibilityRuleModel {
+        +List~String~ targetFields
+        +bool showFields
+        +evaluate(Map~String, dynamic~ context) bool
+        +apply(Map~String, dynamic~ context) RuleResult
+    }
+
+    %% Hierarquia de Campos de Formulário
+    class FormFieldModel {
+        <<abstract>>
+        +String name
+        +String label
+        +FieldType type
+        +bool isRequired
+        +bool isVisible
+        +bool isEnabled
+        +dynamic defaultValue
+        +String? helpText
+        +int order
+        +validate(dynamic value)* List~String~
+        +clone()* FormFieldModel
+    }
+
+    class TextFormFieldModel {
+        +int? maxLength
+        +int maxLines
+        +String? pattern
+        +validate(dynamic value) List~String~
+        +clone() TextFormFieldModel
+    }
+
+    class NumberFormFieldModel {
+        +num? minValue
+        +num? maxValue
+        +bool isInteger
+        +int? decimalPlaces
+        +validate(dynamic value) List~String~
+        +clone() NumberFormFieldModel
+    }
+
+    class DropdownFormFieldModel {
+        +List~DropdownOption~ options
+        +bool allowMultiple
+        +validate(dynamic value) List~String~
+        +clone() DropdownFormFieldModel
+    }
+
+    class DateFormFieldModel {
+        +DateTime? minDate
+        +DateTime? maxDate
+        +validate(dynamic value) List~String~
+        +clone() DateFormFieldModel
+    }
+
+    %% Repositórios Genéricos
+    class IRepository~T~ {
+        <<interface>>
+        +Future~T?~ findById(String id)
+        +Future~List~T~~ findAll()
+        +Future~void~ save(T entity)
+        +Future~void~ saveAll(List~T~ entities)
+        +Future~void~ delete(String id)
+        +Future~void~ deleteAll()
+    }
+
+    class MemoryRepository~T~ {
+        -Map~String, T~ _storage
+        +Future~T?~ findById(String id)
+        +Future~List~T~~ findAll()
+        +Future~void~ save(T entity)
+        +Future~void~ saveAll(List~T~ entities)
+        +Future~void~ delete(String id)
+        +Future~void~ deleteAll()
+    }
+
+    %% Services
+    class RulesEngine~T~ {
+        -IRepository~T~ _repository
+        +Future~RuleResult~ processRules(Map~String, dynamic~ context)
+        +Future~RuleResult~ processRulesByType(RuleType type, Map~String, dynamic~ context)
+        +Future~List~T~~ getApplicableRules(Map~String, dynamic~ context)
+    }
+
+    class FactoryService~T~ {
+        <<abstract>>
+        +T create(Map~String, dynamic~ config)*
+        +bool canCreate(Map~String, dynamic~ config)*
+    }
+
+    %% Controllers
+    class FormController~T extends Product~ {
+        -FormFieldRepository _fieldRepository
+        -RulesEngine~BusinessRule~ _rulesEngine
+        -ProductRepository _productRepository
+        -Map~String, dynamic~ _formData
+        -Map~String, List~String~~ _fieldErrors
+        -Map~String, bool~ _fieldVisibility
+        +Future~void~ initializeForm(T product)
+        +Future~void~ updateField(String fieldName, dynamic value)
+        +Future~bool~ validateForm()
+        +Future~double~ calculateFinalPrice()
+    }
+
+    class QuoteController {
+        -ProductRepository _productRepository
+        -BusinessRuleRepository _ruleRepository
+        -FormFieldRepository _fieldRepository
+        -RulesEngine~BusinessRule~ _rulesEngine
+        +Future~void~ initialize()
+        +Future~void~ selectProduct(Product product)
+        +Future~Quote?~ createQuote()
+        +List~Product~ searchProducts(String searchTerm)
+    }
+
+    %% Mixins
+    class ValidatorMixin {
+        <<mixin>>
+        +bool isValidEmail(String email)
+        +bool isValidCPF(String cpf)
+        +bool isValidCNPJ(String cnpj)
+        +bool isValidPhone(String phone)
+        +List~String~ validateRequired(dynamic value, String fieldName)
+        +List~String~ validateLength(String value, int? minLength, int? maxLength)
+        +List~String~ validateRange(num value, num? min, num? max)
+    }
+
+    class CalculatorMixin {
+        <<mixin>>
+        +double calculatePercentage(double value, double percentage)
+        +double applyDiscount(double value, double discount, bool isPercentage)
+        +double applySurcharge(double value, double surcharge, bool isPercentage)
+        +double calculateTax(double value, double taxRate)
+        +double roundToDecimalPlaces(double value, int places)
+    }
+
+    class FormatterMixin {
+        <<mixin>>
+        +String formatCurrency(double value, String symbol, int decimalPlaces)
+        +String formatNumber(num value, int? decimalPlaces)
+        +String formatDate(DateTime date, String? format)
+        +String formatDays(int days)
+        +String formatProperName(String name)
+    }
+
+    %% Relacionamentos de Herança
+    BaseModel <|-- Product
+    BaseModel <|-- BusinessRule
+    BaseModel <|-- FormFieldModel
+
+    Product <|-- IndustrialProductModel
+    Product <|-- ResidentialProductModel
+    Product <|-- CorporateProductModel
+
+    BusinessRule <|-- PricingRuleModel
+    BusinessRule <|-- ValidationRuleModel
+    BusinessRule <|-- VisibilityRuleModel
+
+    FormFieldModel <|-- TextFormFieldModel
+    FormFieldModel <|-- NumberFormFieldModel
+    FormFieldModel <|-- DropdownFormFieldModel
+    FormFieldModel <|-- DateFormFieldModel
+
+    IRepository <|.. MemoryRepository
+
+    %% Relacionamentos de Composição
+    Product --> ProductType : uses
+    FormController --> Product : manages
+    FormController --> FormFieldModel : uses
+    FormController --> BusinessRule : applies
+    QuoteController --> FormController : contains
+    RulesEngine --> BusinessRule : processes
+
+    %% Relacionamentos de Implementação de Mixins
+    FormController ..|> ValidatorMixin : implements
+    FormController ..|> CalculatorMixin : implements
+    QuoteController ..|> CalculatorMixin : implements
+    QuoteController ..|> FormatterMixin : implements
+
+    %% Relacionamentos de Dependência
+    FormController ..> RulesEngine : depends on
+    QuoteController ..> RulesEngine : depends on
+    RulesEngine ..> IRepository : depends on
+
