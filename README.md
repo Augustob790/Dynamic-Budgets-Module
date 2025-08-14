@@ -152,7 +152,7 @@ lib/
 ### Instalação
 ```bash
 # Clone o repositório
-git clone <repository-url>
+git clone https://github.com/Augustob790/Dynamic-Budgets-Module.git
 cd orcamentos_dinamicos
 
 # Instale as dependências
